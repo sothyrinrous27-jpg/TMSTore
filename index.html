@@ -1,128 +1,473 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TM Store</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TM Store | Cambodia</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#f4f6fa;color:#172033;
-font-family:Arial,sans-serif}
-header{background:#172554;color:white;padding:22px}
-header h1{margin:0 0 8px}
-header p{margin:0;color:#dbeafe}
-main{padding:16px;max-width:750px;margin:auto}
-input{width:100%;padding:13px;border:1px solid #ddd;
-border-radius:12px;margin-bottom:14px;font-size:16px}
-.categories{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-button{cursor:pointer;border:0;border-radius:10px;padding:11px}
-.cat{background:white;color:#172033}
-.cat.active,.buy{background:#2563eb;color:white}
-.products{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.product{background:white;border-radius:14px;padding:12px}
-.photo{font-size:50px;text-align:center;background:#eff6ff;
-padding:20px;border-radius:10px}
-.product h3{font-size:16px;margin:10px 0}
-.price{font-weight:bold;margin:8px 0;color:#1d4ed8}
-.buy{width:100%}
-.cart{background:white;padding:16px;border-radius:14px;margin-top:18px}
-#items p{display:flex;justify-content:space-between;gap:8px}
-.checkout{width:100%;background:#16a34a;color:white;margin-top:10px}
-small{color:#64748b}
+:root {
+  --primary: #087f5b;
+  --dark: #15352c;
+  --light: #f4f8f6;
+  --border: #dce7e1;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--light);
+  color: #202b26;
+}
+header {
+  background: var(--dark);
+  color: white;
+  padding: 22px 16px;
+  text-align: center;
+}
+header h1 { margin: 0 0 7px; }
+header p { margin: 0; color: #d5e9df; }
+main { max-width: 950px; margin: auto; padding: 16px; }
+h2 { font-size: 20px; }
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+input, textarea, select, button {
+  font: inherit;
+}
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd8d0;
+  border-radius: 9px;
+  background: white;
+}
+#search { flex: 1; min-width: 180px; }
+select { max-width: 180px; }
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 12px;
+}
+.product, .panel {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 15px;
+}
+.product { display: flex; flex-direction: column; gap: 9px; }
+.emoji { font-size: 38px; text-align: center; }
+.product h3 { margin: 0; font-size: 16px; }
+.price { font-weight: bold; color: var(--primary); }
+.muted { color: #63736a; font-size: 13px; }
+button {
+  border: 0;
+  border-radius: 9px;
+  padding: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.add, .primary {
+  background: var(--primary);
+  color: white;
+}
+.secondary {
+  background: #e5eee9;
+  color: var(--dark);
+}
+.panel { margin-top: 18px; }
+.cart-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf1ee;
+}
+.qty { display: flex; align-items: center; gap: 9px; }
+.qty button { padding: 6px 11px; }
+.total {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1.7;
+  margin: 12px 0;
+}
+.field { margin: 13px 0; }
+.field label {
+  display: block;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.qr-wrap {
+  text-align: center;
+  padding: 14px;
+  background: #f7faf8;
+  border-radius: 12px;
+  margin: 12px 0;
+}
+#qrImage {
+  display: none;
+  max-width: 260px;
+  width: 100%;
+  height: auto;
+  margin: 12px auto;
+  border-radius: 8px;
+  background: white;
+}
+.notice {
+  background: #fff8df;
+  border: 1px solid #eadb9c;
+  padding: 12px;
+  border-radius: 9px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.full { width: 100%; margin-top: 10px; }
+footer {
+  text-align: center;
+  color: #66766d;
+  font-size: 12px;
+  padding: 25px 12px;
+}
+.hidden { display: none !important; }
+@media (max-width: 420px) {
+  main { padding: 11px; }
+  .product { padding: 11px; }
+}
 </style>
 </head>
 <body>
+
 <header>
   <h1>🛍️ TM Store</h1>
-  <p>Discover products you love.</p>
+  <p>Shop easily in Cambodia 🇰🇭</p>
 </header>
+
 <main>
-  <input id="search" placeholder="Search products..." />
-  <div class="categories" id="categories"></div>
+  <div class="toolbar">
+    <input id="search" placeholder="🔎 Search products..." aria-label="Search products">
+    <select id="currency" aria-label="Display currency">
+      <option value="USD">USD ($)</option>
+      <option value="KHR">KHR (៛)</option>
+    </select>
+  </div>
+
+  <h2>🛒 Our Products</h2>
   <div class="products" id="products"></div>
-  <section class="cart">
-    <h2>🛒 Your Cart (<span id="count">0</span>)</h2>
+
+  <section class="panel" id="cartPanel">
+    <h2>Your Cart (<span id="count">0</span>)</h2>
     <div id="items">Your cart is empty.</div>
-    <h3>Total: $<span id="total">0.00</span></h3>
-    <button class="checkout" onclick="checkout()">
-      Send Order to Telegram
-    </button>
-    <small>Payment by Bakong / KHQR. Please pay and wait for payment confirmation before delivery. Payment is checked manually.</small>
+    <div class="total">
+      Total: <span id="total">$0.00</span>
+      <div class="muted" id="alternateTotal">៛0</div>
+    </div>
+    <button class="secondary full" onclick="clearCart()">Clear Cart</button>
+  </section>
+
+  <section class="panel">
+    <h2>📦 Customer & Delivery Details</h2>
+    <form id="checkoutForm">
+      <div class="field">
+        <label for="customerName">Full name *</label>
+        <input id="customerName" name="customerName" required
+          maxlength="100" autocomplete="name" placeholder="Enter your full name">
+      </div>
+      <div class="field">
+        <label for="phone">Phone number *</label>
+        <input id="phone" name="phone" required type="tel"
+          maxlength="30" autocomplete="tel" placeholder="e.g. 012 345 678">
+      </div>
+      <div class="field">
+        <label for="address">Delivery address in Cambodia *</label>
+        <textarea id="address" name="address" required
+          maxlength="500" rows="3" autocomplete="street-address"
+          placeholder="House number, street, village, commune, district, province"></textarea>
+      </div>
+      <div class="field">
+        <label for="notes">Order notes (optional)</label>
+        <textarea id="notes" name="notes" maxlength="500" rows="2"
+          placeholder="Delivery instructions or other requests"></textarea>
+      </div>
+
+      <h2>💳 Payment by Bakong / KHQR</h2>
+      <div class="qr-wrap">
+        <strong>Scan the official store QR code to pay</strong>
+        <img id="qrImage" src="khqr.png" alt="TM Store official KHQR payment code">
+        <p id="qrMessage" class="muted">
+          The store's KHQR image has not been added yet.
+          Please contact the store for the official payment QR code.
+        </p>
+        <p>Pay the exact order total after confirming your order.</p>
+      </div>
+
+      <div class="notice">
+        <strong>Payment instructions</strong><br>
+        1. Confirm your cart and delivery details.<br>
+        2. Scan the store's official KHQR using a supported banking app.<br>
+        3. Check the recipient and amount before paying.<br>
+        4. Keep your payment receipt.<br>
+        5. Your order and payment must be checked by the store manually.
+        Do not assume payment is confirmed until the store verifies it.
+      </div>
+
+      <button class="primary full" type="submit">
+        Submit Order to Telegram
+      </button>
+      <p class="muted">
+        Submitting an order does not itself process or verify a payment.
+      </p>
+    </form>
   </section>
 </main>
+
+<footer>
+  TM Store · Cambodia delivery · Bakong / KHQR<br>
+  Exchange rate shown for display only: $1 = ៛4,100
+</footer>
+
 <script>
-const tg = window.Telegram?.WebApp;
-tg?.ready();
-tg?.expand();
+const EXCHANGE_RATE = 4100;
 
+// Example products. Replace these with your real product information.
 const productsData = [
- {id:1,name:"Lon Koom, Nooble Black, EAU De Perfume ",price:9,cat:"Electronics",emoji:"🧴"},
- {id:2,name:"Smart Watch",price:25,cat:"Electronics",emoji:"⌚"},
- {id:3,name:"Casual T-Shirt",price:8,cat:"Fashion",emoji:"👕"},
- {id:4,name:"Travel Backpack",price:18,cat:"Fashion",emoji:"🎒"},
- {id:5,name:"Water Bottle",price:5,cat:"Lifestyle",emoji:"🥤"},
- {id:6,name:"Desk Lamp",price:12,cat:"Lifestyle",emoji:"💡"}
+  {id:1, name:"Lon Koom Nooble Black Eau de Parfum", price:9, cat:"Beauty", emoji:"🧴"},
+  {id:2, name:"Smart Watch", price:25, cat:"Electronics", emoji:"⌚"},
+  {id:3, name:"Casual T-Shirt", price:8, cat:"Fashion", emoji:"👕"},
+  {id:4, name:"Travel Backpack", price:18, cat:"Fashion", emoji:"🎒"},
+  {id:5, name:"Water Bottle", price:5, cat:"Lifestyle", emoji:"🥤"},
+  {id:6, name:"Desk Lamp", price:12, cat:"Lifestyle", emoji:"💡"}
 ];
-let category="All", cart={};
 
-const categories=["All",...new Set(productsData.map(p=>p.cat))];
-document.getElementById("categories").innerHTML=categories.map(c=>
- `<button class="cat ${c==="All"?"active":""}"
- onclick="setCategory('${c}',this)">${c}</button>`
-).join("");
+const cart = {};
+const currencySelect = document.getElementById("currency");
+const tg = window.Telegram?.WebApp;
 
-function setCategory(c,btn){
- category=c;
- document.querySelectorAll(".cat").forEach(b=>b.classList.remove("active"));
- btn.classList.add("active");
- render();
+if (tg) {
+  tg.ready();
+  tg.expand();
 }
-function render(){
- const q=document.getElementById("search").value.toLowerCase();
- const list=productsData.filter(p=>
- (category==="All"||p.cat===category)&&p.name.toLowerCase().includes(q));
- document.getElementById("products").innerHTML=list.map(p=>
- `<article class="product">
- <div class="photo">${p.emoji}</div>
- <h3>${p.name}</h3><div class="price">$${p.price.toFixed(2)}</div>
- <button class="buy" onclick="add(${p.id})">Add to Cart</button>
- </article>`).join("")||"No products found.";
- updateCart();
+
+function money(amount, currency = currencySelect.value) {
+  if (currency === "KHR") {
+    return "៛" + Math.round(amount * EXCHANGE_RATE).toLocaleString("en-US");
+  }
+  return "$" + amount.toFixed(2);
 }
-function add(id){cart[id]=(cart[id]||0)+1;updateCart();}
-function updateCart(){
- let count=0,total=0,lines=[];
- productsData.forEach(p=>{
-  let n=cart[p.id]||0;
-  if(n){count+=n;total+=n*p.price;
-  lines.push(`<p>${p.name} × ${n}
-  <button onclick="removeItem(${p.id})">−</button>
-  <b>$${(n*p.price).toFixed(2)}</b></p>`);}
- });
- document.getElementById("count").textContent=count;
- document.getElementById("total").textContent=total.toFixed(2);
- document.getElementById("items").innerHTML=lines.join("")||"Your cart is empty.";
+
+function renderProducts() {
+  const search = document.getElementById("search").value.toLowerCase();
+  const container = document.getElementById("products");
+  container.replaceChildren();
+
+  productsData
+    .filter(p => p.name.toLowerCase().includes(search) ||
+                 p.cat.toLowerCase().includes(search))
+    .forEach(p => {
+      const card = document.createElement("article");
+      card.className = "product";
+
+      const emoji = document.createElement("div");
+      emoji.className = "emoji";
+      emoji.textContent = p.emoji;
+
+      const name = document.createElement("h3");
+      name.textContent = p.name;
+
+      const category = document.createElement("div");
+      category.className = "muted";
+      category.textContent = p.cat;
+
+      const price = document.createElement("div");
+      price.className = "price";
+      price.textContent = money(p.price);
+
+      const alternate = document.createElement("div");
+      alternate.className = "muted";
+      alternate.textContent = money(p.price, "KHR");
+
+      const button = document.createElement("button");
+      button.className = "add";
+      button.textContent = "Add to Cart";
+      button.onclick = () => {
+        cart[p.id] = (cart[p.id] || 0) + 1;
+        renderCart();
+      };
+
+      card.append(emoji, name, category, price, alternate, button);
+      container.appendChild(card);
+    });
+
+  if (!container.children.length) {
+    container.textContent = "No products found.";
+  }
 }
-function removeItem(id){
- cart[id]=(cart[id]||0)-1;
- if(cart[id]<=0)delete cart[id];
- updateCart();
+
+function renderCart() {
+  const container = document.getElementById("items");
+  container.replaceChildren();
+  let count = 0;
+  let total = 0;
+  let hasItems = false;
+
+  productsData.forEach(p => {
+    const qty = cart[p.id] || 0;
+    if (!qty) return;
+
+    hasItems = true;
+    count += qty;
+    total += p.price * qty;
+
+    const row = document.createElement("div");
+    row.className = "cart-row";
+
+    const info = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = p.name;
+
+    const subtotal = document.createElement("div");
+    subtotal.className = "muted";
+    subtotal.textContent = money(p.price * qty) + " · " +
+                           money(p.price * qty, "KHR");
+    info.append(name, document.createElement("br"), subtotal);
+
+    const controls = document.createElement("div");
+    controls.className = "qty";
+
+    const minus = document.createElement("button");
+    minus.className = "secondary";
+    minus.textContent = "−";
+    minus.setAttribute("aria-label", "Remove one " + p.name);
+    minus.onclick = () => {
+      cart[p.id]--;
+      if (cart[p.id] <= 0) delete cart[p.id];
+      renderCart();
+    };
+
+    const quantity = document.createElement("span");
+    quantity.textContent = String(qty);
+
+    const plus = document.createElement("button");
+    plus.className = "secondary";
+    plus.textContent = "+";
+    plus.setAttribute("aria-label", "Add one " + p.name);
+    plus.onclick = () => {
+      cart[p.id]++;
+      renderCart();
+    };
+
+    controls.append(minus, quantity, plus);
+    row.append(info, controls);
+    container.appendChild(row);
+  });
+
+  if (!hasItems) container.textContent = "Your cart is empty.";
+
+  document.getElementById("count").textContent = String(count);
+  document.getElementById("total").textContent = money(total, "USD");
+  document.getElementById("alternateTotal").textContent = money(total, "KHR");
 }
-function checkout(){
- let lines=productsData.filter(p=>cart[p.id]).map(p=>
- `${p.name} x ${cart[p.id]} = $${(p.price*cart[p.id]).toFixed(2)}`);
- if(!lines.length){alert("Your cart is empty.");return;}
- const message="TM Store order:\n"+lines.join("\n")+
- "\nTotal: $"+document.getElementById("total").textContent;
- if(tg?.initData){
-  tg.sendData(message);
- }else{
-  alert(message+"\n\nDemo order only. No order has been submitted.");
- }
+
+function clearCart() {
+  Object.keys(cart).forEach(id => delete cart[id]);
+  renderCart();
 }
-document.getElementById("search").addEventListener("input",render);
-render();
+
+function getOrderItems() {
+  return productsData
+    .filter(p => cart[p.id])
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      quantity: cart[p.id],
+      unitPriceUSD: p.price,
+      subtotalUSD: p.price * cart[p.id]
+    }));
+}
+
+document.getElementById("search").addEventListener("input", renderProducts);
+
+currencySelect.addEventListener("change", () => {
+  renderProducts();
+  renderCart();
+});
+
+// Show the QR image only if khqr.png loads successfully.
+const qrImage = document.getElementById("qrImage");
+qrImage.onload = () => {
+  qrImage.style.display = "block";
+  document.getElementById("qrMessage").style.display = "none";
+};
+qrImage.onerror = () => {
+  qrImage.style.display = "none";
+  document.getElementById("qrMessage").style.display = "block";
+};
+
+document.getElementById("checkoutForm").addEventListener("submit", event => {
+  event.preventDefault();
+
+  const orderItems = getOrderItems();
+  if (!orderItems.length) {
+    alert("Please add at least one product to your cart.");
+    return;
+  }
+
+  const customerName = document.getElementById("customerName").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
+  const notes = document.getElementById("notes").value.trim();
+
+  if (!customerName || !phone || !address) {
+    alert("Please complete your name, phone number, and delivery address.");
+    return;
+  }
+
+  const totalUSD = orderItems.reduce((sum, item) => sum + item.subtotalUSD, 0);
+
+  const order = {
+    type: "tm_store_order",
+    customer: {
+      name: customerName,
+      phone: phone,
+      deliveryAddress: address,
+      notes: notes
+    },
+    items: orderItems,
+    totalUSD: Number(totalUSD.toFixed(2)),
+    totalKHR: Math.round(totalUSD * EXCHANGE_RATE),
+    currency: "USD",
+    paymentMethod: "Bakong / KHQR",
+    paymentStatus: "PENDING_MANUAL_VERIFICATION",
+    createdAt: new Date().toISOString()
+  };
+
+  if (tg && tg.initData) {
+    // The Telegram bot must be programmed to receive web_app_data.
+    tg.sendData(JSON.stringify(order));
+    alert("Order submitted to Telegram. Please wait for the store to confirm receipt and verify payment.");
+  } else {
+    // Do not falsely claim an order was sent to the bot.
+    const copyText = JSON.stringify(order, null, 2);
+    if (confirm("This page was not opened as a supported Telegram Mini App, so it cannot send the order to your bot. Copy the order details instead?")) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(copyText)
+          .then(() => alert("Order details copied. They have NOT been sent to the store."))
+          .catch(() => prompt("Copy these order details manually:", copyText));
+      } else {
+        prompt("Copy these order details manually:", copyText);
+      }
+    }
+    return;
+  }
+});
+
+renderProducts();
+renderCart();
 </script>
 </body>
 </html>
