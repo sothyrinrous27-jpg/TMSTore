@@ -1,8 +1,12 @@
 import base64
+import hashlib
+import hmac
 import io
 import json
 import os
 import secrets
+import time
+from urllib.parse import parse_qsl
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
@@ -40,7 +44,7 @@ app.add_middleware(
     allow_origins=cors_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "X-Telegram-Bot-Api-Secret-Token"],
+    allow_headers=["Content-Type", "X-Telegram-Bot-Api-Secret-Token", "X-Telegram-Init-Data"],
 )
 
 def db():
@@ -137,6 +141,30 @@ def telegram_send(text: str, reply_markup: dict | None = None):
         # Do not expose credentials or Telegram's full request URL to customers.
         print("Telegram notification failed:", type(exc).__name__)
 
+def verify_telegram_init_data(init_data: str) -> dict:
+    """Validate Telegram Mini App initData HMAC and reject stale launch data."""
+    if not BOT_TOKEN or not init_data:
+        raise HTTPException(status_code=401, detail="Telegram authentication is required")
+    try:
+        pairs = dict(parse_qsl(init_data, keep_blank_values=True, strict_parsing=True))
+        received_hash = pairs.pop("hash", "")
+        if not received_hash:
+            raise ValueError("missing hash")
+        data_check_string = "\n".join(f"{key}={value}" for key, value in sorted(pairs.items()))
+        secret_key = hmac.new(b"WebAppData", BOT_TOKEN.encode(), hashlib.sha256).digest()
+        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(calculated_hash, received_hash):
+            raise ValueError("invalid hash")
+        auth_date = int(pairs.get("auth_date", "0"))
+        if auth_date <= 0 or abs(int(time.time()) - auth_date) > 86400:
+            raise ValueError("stale auth_date")
+        user = json.loads(pairs.get("user", "{}"))
+        if not user.get("id"):
+            raise ValueError("missing Telegram user")
+        return user
+    except (ValueError, TypeError, json.JSONDecodeError):
+        raise HTTPException(status_code=401, detail="Invalid or expired Telegram Mini App authentication")
+
 def money(v):
     return Decimal(str(v)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
@@ -186,12 +214,9 @@ def list_products():
 
 @app.post("/api/orders")
 def create_order(body: OrderIn, request: Request):
-    # Telegram Mini App initData MUST be validated server-side before production.
-    # This endpoint is not safe to expose publicly until that validation is implemented.
+    # Validate Telegram's signed launch data before accepting an order.
     raw_init_data = request.headers.get("X-Telegram-Init-Data", "")
-    if not raw_init_data:
-        raise HTTPException(status_code=401, detail="Open the store from Telegram to place an order")
-    # TODO: verify Telegram WebApp initData HMAC using BOT_TOKEN and enforce a short auth_date age.
+    telegram_user = verify_telegram_init_data(raw_init_data)
     # Never trust product names or prices sent by the browser; look up active prices here.
     unique_ids = list({item.id for item in body.items})
     with db() as conn, conn.cursor() as cur:
