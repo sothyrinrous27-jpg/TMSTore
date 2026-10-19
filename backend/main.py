@@ -185,6 +185,7 @@ def make_khqr(amount: Decimal, order_id: int):
             amount=float(payment_amount) if PAYMENT_CURRENCY == "USD" else payment_amount,
             currency=PAYMENT_CURRENCY,
             bill_number=f"TM{order_id}",
+            static=False,
         )
         md5 = khqr.generate_md5(qr_string)
         image = qrcode.make(qr_string)
