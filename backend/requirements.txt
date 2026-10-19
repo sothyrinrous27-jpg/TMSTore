@@ -1,0 +1,7 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+psycopg2-binary==2.9.10
+requests==2.32.3
+python-dotenv==1.1.0
+bakong-khqr==0.4.0
+qrcode[pil]==8.1
